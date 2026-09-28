@@ -347,18 +347,18 @@ li:not(.collapsed) > .toc-row .tw svg { transform: rotate(90deg); }
 .margin-off #margin { display: none; }
 [data-mode='focus'] #stage { display: none; }
 
-.doc-head { padding-bottom: 18px; margin-bottom: 8px; border-bottom: 2px solid var(--text); }
+.doc-head { padding-bottom: 18px; margin-bottom: 16px; border-bottom: 2px solid var(--text); }
 .doc-title { font-family: var(--font-head); font-weight: 800; font-size: 30px; line-height: 1.25; margin: 0 0 10px; letter-spacing: -0.02em; }
 .doc-meta { display: flex; flex-wrap: wrap; gap: 8px; }
 .meta-chip { font-size: 13px; padding: 3px 10px; border-radius: 999px; background: var(--paper-2); border: 1px solid var(--line); }
 .meta-k { color: var(--muted); margin-right: 6px; font-weight: 600; letter-spacing: 0.02em; }
 
 /* ===== 본문 타이포그래피 ===== */
-#content { font-size: 16px; line-height: 1.8; word-break: keep-all; overflow-wrap: anywhere; }
-#content p { margin: 0.55em 0; }
+#content { font-size: 16px; line-height: 2; word-break: keep-all; overflow-wrap: anywhere; }
+#content p { margin: 0.95em 0; }
 #content li > p.t { margin: 0; }
-#content ul, #content ol { margin: 0.25em 0; padding-left: 1.45em; }
-#content li { margin: 0.1em 0; }
+#content ul, #content ol { margin: 0.55em 0; padding-left: 1.45em; }
+#content li { margin: 0.5em 0; }
 #content li::marker { color: var(--muted-2); }
 #content ul ul { list-style-type: circle; }
 #content ul ul ul { list-style-type: square; }
@@ -367,17 +367,17 @@ li:not(.collapsed) > .toc-row .tw svg { transform: rotate(90deg); }
 }
 #content h1 {
   font-family: var(--font-head); font-weight: 800; font-size: 28px; letter-spacing: -0.02em;
-  margin: 2.2em 0 0.7em; padding-top: 0.7em; border-top: 1px solid var(--line-strong);
+  margin: 2.8em 0 0.9em; padding-top: 0.7em; border-top: 1px solid var(--line-strong);
 }
 #content > h1:first-child { margin-top: 1em; border-top: 0; padding-top: 0; }
 #content h2 {
   font-family: var(--font-head); font-weight: 800; font-size: 22px; letter-spacing: -0.01em;
-  margin: 1.9em 0 0.6em; padding-bottom: 0.3em; border-bottom: 1px solid var(--line);
+  margin: 2.5em 0 0.8em; padding-bottom: 0.3em; border-bottom: 1px solid var(--line);
 }
-#content h3 { font-size: 18px; font-weight: 700; margin: 1.6em 0 0.45em; color: var(--accent-ink); }
-#content h4 { font-size: 16.5px; font-weight: 700; margin: 1.3em 0 0.35em; }
-#content h5 { font-size: 15.5px; font-weight: 600; margin: 1.1em 0 0.3em; color: var(--muted); }
-#content hr { border: 0; border-top: 1px dashed var(--line-strong); margin: 1.5em 0; }
+#content h3 { font-size: 18px; font-weight: 700; margin: 2.2em 0 0.65em; color: var(--accent-ink); }
+#content h4 { font-size: 16.5px; font-weight: 700; margin: 1.8em 0 0.55em; }
+#content h5 { font-size: 15.5px; font-weight: 600; margin: 1.5em 0 0.45em; color: var(--muted); }
+#content hr { border: 0; border-top: 1px dashed var(--line-strong); margin: 2em 0; }
 /* 강조 표기: 스니펫 13절(굵게·밑줄은 본문 글자색, 형광은 노란 반투명) */
 :is(#content, #focusView) strong { font-weight: 700; color: var(--text); }
 :is(#content, #focusView) u { text-decoration-color: var(--text); text-decoration-thickness: 1.5px; text-underline-offset: 3.5px; text-decoration-skip-ink: auto; }
@@ -385,8 +385,8 @@ li:not(.collapsed) > .toc-row .tw svg { transform: rotate(90deg); }
   background: var(--mark); color: var(--text); padding: 0.04em 0.18em; border-radius: 3px;
   -webkit-box-decoration-break: clone; box-decoration-break: clone;
 }
-#content blockquote { margin: 0.7em 0; padding: 0.1em 0 0.1em 1em; border-left: 3px solid var(--line-strong); color: var(--muted); }
-#content blockquote blockquote { margin: 0.4em 0; }
+#content blockquote { margin: 1.1em 0; padding: 0.1em 0 0.1em 1em; border-left: 3px solid var(--line-strong); color: var(--muted); }
+#content blockquote blockquote { margin: 0.7em 0; }
 .fc-gray { color: var(--muted); }
 .fc-light { color: var(--muted-2); }
 .fc-red { color: var(--red); }
@@ -401,9 +401,9 @@ li:not(.collapsed) > .toc-row .tw svg { transform: rotate(90deg); }
 }
 
 /* 표: 스니펫 12절 색. 왼쪽 위 칸이 비었거나 첫 열 칸이 굵은 글씨만이면 첫 열도 머리 */
-.table-wrap { overflow-x: auto; margin: 0.9em 0; border: 1px solid var(--tbl-line); border-radius: 5px; }
-:is(#content, #focusView) table { border-collapse: collapse; width: 100%; font-size: 14.5px; line-height: 1.65; }
-:is(#content, #focusView) :is(th, td) { border: 1px solid var(--tbl-line); padding: 7px 10px; text-align: left; vertical-align: top; min-width: 5em; }
+.table-wrap { overflow-x: auto; margin: 1.3em 0; border: 1px solid var(--tbl-line); border-radius: 5px; }
+:is(#content, #focusView) table { border-collapse: collapse; width: 100%; font-size: 14.5px; line-height: 1.8; }
+:is(#content, #focusView) :is(th, td) { border: 1px solid var(--tbl-line); padding: 10px 12px; text-align: left; vertical-align: top; min-width: 5em; }
 :is(#content, #focusView) tr > :first-child { border-left: 0; }
 :is(#content, #focusView) tr > :last-child { border-right: 0; }
 :is(#content, #focusView) thead th { background: var(--tbl-head); font-weight: 700; text-align: center; vertical-align: middle; border-top: 0; }
@@ -430,7 +430,7 @@ li:not(.collapsed) > .toc-row .tw svg { transform: rotate(90deg); }
 /* ===== 콜아웃: 색은 옵시디언 스니펫, 배경은 더 연하게, 왼쪽 띠 없음 ===== */
 .callout {
   --c: var(--cl-law);
-  margin: 0.9em 0; padding: 0.55em 0.95em 0.6em;
+  margin: 1.4em 0; padding: 0.85em 1.1em 0.9em;
   border: 1px solid rgba(var(--c), 0.18);
   background: rgba(var(--c), var(--tint));
   border-radius: 6px;
@@ -439,10 +439,10 @@ li:not(.collapsed) > .toc-row .tw svg { transform: rotate(90deg); }
 .c-issue { --c: var(--cl-issue); }
 .c-ex { --c: var(--cl-ex); }
 .c-ans, .c-test { --c: var(--cl-ans); background: rgba(var(--c), var(--tint-strong)); }
-.callout .callout { margin: 0.6em 0; background: rgba(var(--c), var(--tint-strong)); }
+.callout .callout { margin: 1em 0; background: rgba(var(--c), var(--tint-strong)); }
 .callout-title {
   display: flex; align-items: baseline; gap: 0.55em;
-  font-weight: 700; line-height: 1.55; letter-spacing: -0.01em; font-variant-numeric: tabular-nums;
+  font-weight: 700; line-height: 1.7; letter-spacing: -0.01em; font-variant-numeric: tabular-nums;
   color: rgb(var(--c));
 }
 .callout-title::before {
@@ -455,7 +455,7 @@ li:not(.collapsed) > .toc-row .tw svg { transform: rotate(90deg); }
 .c-ans > .callout-title::before, .c-test > .callout-title::before { content: '答'; }
 /* 조문·사례: 제목 줄도 본문 줄처럼(색·굵기·표식 없음, **굵게**만 굵게) */
 .c-law > .callout-title, .c-ex > .callout-title {
-  display: block; font-weight: 400; color: var(--text); line-height: 1.8; letter-spacing: normal;
+  display: block; font-weight: 400; color: var(--text); line-height: inherit; letter-spacing: normal;
 }
 .c-law > .callout-title::before, .c-ex > .callout-title::before { content: none; }
 .c-law.untitled > .callout-title, .c-ex.untitled > .callout-title { display: none; }
@@ -463,9 +463,9 @@ li:not(.collapsed) > .toc-row .tw svg { transform: rotate(90deg); }
 .c-case.untitled > .callout-title::after { content: '판례'; }
 .c-issue.untitled > .callout-title::after { content: '쟁점'; }
 .c-ans.untitled > .callout-title::after, .c-test.untitled > .callout-title::after { content: '답안'; }
-.callout-body > :first-child { margin-top: 0.3em !important; }
+.callout-body > :first-child { margin-top: 0.55em !important; }
 .c-law > .callout-title + .callout-body > :first-child,
-.c-ex > .callout-title + .callout-body > :first-child { margin-top: 0.2em !important; }
+.c-ex > .callout-title + .callout-body > :first-child { margin-top: 0.4em !important; }
 .callout-body > :last-child { margin-bottom: 0.1em !important; }
 .callout:not(:has(> .callout-title)) > .callout-body > :first-child { margin-top: 0 !important; }
 /* 쟁점 콜아웃: 줄 맨 앞 굵은 글씨는 먹색 알약(스니펫 6절) */
@@ -667,8 +667,8 @@ details.callout:not([open]) > summary.callout-title .ct::after { transform: rota
 .f-path .sep { color: var(--muted-2); }
 .f-card {
   position: relative; background: var(--paper); border: 1px solid var(--line); border-radius: 7px;
-  padding: 12px 16px 12px; margin: 0 0 10px; box-shadow: var(--shadow);
-  font-size: 15.5px; line-height: 1.8; word-break: keep-all; overflow-wrap: anywhere;
+  padding: 16px 20px; margin: 0 0 16px; box-shadow: var(--shadow);
+  font-size: 15.5px; line-height: 2; word-break: keep-all; overflow-wrap: anywhere;
 }
 .f-card-top { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; min-height: 26px; }
 .f-ctx { font-size: 11.5px; font-weight: 700; letter-spacing: 0.04em; padding: 2px 8px; border-radius: 4px; color: rgb(var(--c, var(--cl-case))); background: rgba(var(--c, var(--cl-case)), 0.14); }
@@ -676,7 +676,7 @@ details.callout:not([open]) > summary.callout-title .ct::after { transform: rota
 .f-go { margin-left: auto; flex: none; }
 .f-body > :first-child { margin-top: 0; }
 .f-body > :last-child { margin-bottom: 0; }
-.f-body p { margin: 0.3em 0; }
+.f-body p { margin: 0.6em 0; }
 .f-body h1, .f-body h2, .f-body h3, .f-body h4, .f-body h5 { margin: 0; font-size: 17px; font-family: var(--font-body); font-weight: 700; border: 0; padding: 0; }
 .f-body .table-wrap { margin: 0.2em 0; }
 .f-body .callout-title { color: rgb(var(--c, var(--cl-case))); font-weight: 700; }
