@@ -2139,7 +2139,7 @@
   }
   function doLayout() {
     const main = $('#main');
-    // 메모 여백은 화면에 들어가고, 펼쳐 두었고, 메모가 있을 때만. 아니면 숨겨서 본문이 가운데 온다
+    // 메모 여백은 화면에 들어가고(본문이 760px 이상 남을 때), 펼쳐 두었고, 메모가 있을 때만. 아니면 숨겨서 본문이 가운데 온다
     const canMargin = main.clientWidth >= 760 + 22 + 248 + 36;
     const memoCount = orderedMemos().length;
     app.classList.toggle('margin-off', !(canMargin && ui.memoOpen && memoCount > 0));

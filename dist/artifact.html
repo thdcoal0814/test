@@ -58,7 +58,7 @@
 
   --top-h: 86px;
   --toc-w: 288px;
-  --doc-w: 760px;
+  --doc-w: 1100px; /* 본문 틀 최대 폭. 화면이 좁거나 메모 여백을 펼치면 그만큼 줄어든다 */
   --font-body: 'IBM Plex Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', system-ui, sans-serif;
   --font-head: 'Nanum Myeongjo', 'AppleMyungjo', 'Batang', 'Noto Serif KR', serif;
 }
@@ -333,7 +333,7 @@ li:not(.collapsed) > .toc-row .tw svg { transform: rotate(90deg); }
   padding: 24px 16px 140px;
 }
 #doc {
-  position: relative; width: var(--doc-w); max-width: 100%; flex: none;
+  position: relative; flex: 0 1 var(--doc-w); min-width: 0; max-width: 100%;
   background: var(--paper); border: 1px solid var(--line); border-radius: 6px;
   padding: 40px 44px 72px; box-shadow: var(--shadow);
 }
@@ -650,7 +650,7 @@ details.callout:not([open]) > summary.callout-title .ct::after { transform: rota
 .banner { margin: 0 0 16px; padding: 10px 14px; border-radius: 8px; font-size: 14px; background: var(--memo-soft); border: 1px solid color-mix(in srgb, var(--memo) 40%, transparent); }
 
 /* ===== 중요 내용 모드 ===== */
-#focusView { max-width: 840px; margin: 0 auto; padding: 26px 16px 150px; }
+#focusView { max-width: calc(var(--doc-w) + 32px); margin: 0 auto; padding: 26px 16px 150px; }
 .f-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; border-bottom: 2px solid var(--text); padding-bottom: 12px; margin-bottom: 18px; }
 .f-head h2 { font-family: var(--font-head); font-weight: 800; font-size: 26px; margin: 0; letter-spacing: -0.02em; }
 .f-count { font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; }
@@ -9510,7 +9510,7 @@ X 토지의 현재 소유자는 선행 보존등기로부터 양수한 정이다
   }
   function doLayout() {
     const main = $('#main');
-    // 메모 여백은 화면에 들어가고, 펼쳐 두었고, 메모가 있을 때만. 아니면 숨겨서 본문이 가운데 온다
+    // 메모 여백은 화면에 들어가고(본문이 760px 이상 남을 때), 펼쳐 두었고, 메모가 있을 때만. 아니면 숨겨서 본문이 가운데 온다
     const canMargin = main.clientWidth >= 760 + 22 + 248 + 36;
     const memoCount = orderedMemos().length;
     app.classList.toggle('margin-off', !(canMargin && ui.memoOpen && memoCount > 0));

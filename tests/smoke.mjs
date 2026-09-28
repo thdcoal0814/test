@@ -241,14 +241,18 @@ try {
       const m = document.getElementById('main').getBoundingClientRect();
       return Math.abs(d.left + d.width / 2 - (m.left + m.width / 2));
     });
+  const frameW = () => page.evaluate(() => document.getElementById('doc').offsetWidth);
   const gapOpen = await centerGap();
+  const wOpen = await frameW();
   await page.click('#memoToggle');
   await page.waitForTimeout(300);
   const gapClosed = await centerGap();
+  const wClosed = await frameW();
   const cardsClosed = await page.locator('.memo-card').count();
   await page.click('#memoToggle');
   await page.waitForTimeout(300);
   check('메모 접으면 본문 가운데', gapOpen > 50 && gapClosed < 2 && cardsClosed === 0 && (await page.locator('.memo-card').count()) === 1, `열림 ${gapOpen.toFixed(0)}px, 접힘 ${gapClosed.toFixed(1)}px`);
+  check('본문 틀 폭: 메모 접으면 최대 1100px, 펼치면 여백만큼 줄어듦', wClosed === 1100 && wOpen >= 760 && wOpen < wClosed, `접힘 ${wClosed}px, 펼침 ${wOpen}px`);
 
   // 진도: 목차 체크 → 상위 % → 새로고침 후 유지
   await page.click('#tocExpand');
