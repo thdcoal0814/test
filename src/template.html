@@ -30,10 +30,24 @@
       </button>
     </div>
   </header>
-  <nav id="crumbs" aria-label="현재 위치"></nav>
+  <nav id="crumbs" aria-label="현재 위치">
+    <div class="crumb-path"></div>
+    <div class="crumb-actions">
+      <button type="button" id="secDone" class="crumb-act" aria-pressed="false" hidden>
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.3l2.8 2.8 6.2-6.4"/></svg><span>완료 표시</span>
+      </button>
+      <button type="button" id="memoToggle" class="crumb-act" aria-expanded="true" hidden>
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 3h10v7.5H7L3.5 13z"/></svg><span>메모 접기</span>
+      </button>
+    </div>
+  </nav>
 
   <aside id="toc" aria-label="목차">
     <div class="toc-head">
+      <div class="toc-progress">
+        <div class="tp-row"><span>내 진도</span><span><strong id="progPct">0%</strong> · <span id="progCount">완료 0곳</span></span></div>
+        <div class="tp-bar" id="progBar" role="progressbar" aria-label="전체 진도" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i></i></div>
+      </div>
       <input id="tocFilter" type="search" placeholder="목차에서 찾기" aria-label="목차에서 찾기" autocomplete="off">
       <div class="toc-actions">
         <button type="button" id="tocExpand" class="text-btn">모두 펼치기</button>
@@ -177,7 +191,8 @@
     <ul class="menu-help">
       <li>펜·마우스로 끌면 단어 단위로 선택돼요. 단어를 탭하면 그 단어 전체에 적용돼요.</li>
       <li>손가락으로 끌면 스크롤, 손가락 탭은 가린 빈칸 열기예요.</li>
-      <li>단축키: 1–4 모드 · [ 목차 · B 빈칸 가리기 · P 자동 스크롤 · Ctrl+Z 되돌리기 · Esc 도구 해제</li>
+      <li>목차의 동그라미를 누르면 그 쟁점을 공부 완료로 표시해요. 상위 제목은 아래 쟁점 전체를 한 번에 표시하고, 진도율이 함께 보여요.</li>
+      <li>단축키: 1–4 모드 · [ 목차 · B 빈칸 가리기 · M 메모 접기 · P 자동 스크롤 · Ctrl+Z 되돌리기 · Esc 도구 해제</li>
     </ul>
   </div>
   <div id="toast" role="status" aria-live="polite"></div>

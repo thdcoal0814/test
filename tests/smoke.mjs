@@ -208,6 +208,69 @@ try {
   };
   check('새로고침 후 유지', persisted.hl > 0 && persisted.bk > 0 && persisted.ink === 2 && persisted.memo === 1, JSON.stringify(persisted));
 
+  // 콜아웃 색·양식(옵시디언 스니펫 기준)
+  const style = await page.evaluate(() => {
+    const cs = (el) => (el ? getComputedStyle(el) : null);
+    const lawTitle = document.querySelector('.c-law:not(.untitled) > .callout-title');
+    const caseTitle = document.querySelector('.c-case:not(.untitled) > .callout-title');
+    const law = document.querySelector('.c-law');
+    const code = document.querySelector('#content code');
+    const body = cs(document.querySelector('#content p'));
+    return {
+      lawWeight: cs(lawTitle).fontWeight,
+      lawColorIsText: cs(lawTitle).color === body.color,
+      caseColor: cs(caseTitle).color,
+      lawBg: cs(law).backgroundColor,
+      badgeBg: cs(code).backgroundColor,
+      pills: document.querySelectorAll('.c-issue strong.pill').length,
+      nestedPills: document.querySelectorAll('.c-issue .callout strong.pill, .c-issue .callout-title strong.pill').length,
+      firstPill: document.querySelector('.c-issue strong.pill')?.textContent,
+      lblLeft: document.querySelectorAll('code[class*="lbl-"]').length,
+    };
+  });
+  check('조문 제목 줄은 본문처럼', style.lawWeight === '400' && style.lawColorIsText, JSON.stringify([style.lawWeight, style.lawColorIsText]));
+  check('판례 제목은 스니펫 회색', style.caseColor === 'rgb(110, 118, 128)', style.caseColor);
+  check('콜아웃 배경은 스니펫 색을 더 연하게', style.lawBg === 'rgba(62, 106, 168, 0.055)', style.lawBg);
+  check('백틱 배지 한 가지 색', style.badgeBg === 'rgba(180, 140, 60, 0.2)' && style.lblLeft === 0, style.badgeBg);
+  check('쟁점 라벨 알약', style.pills >= 100 && style.nestedPills === 0 && style.firstPill === '사안', `${style.pills}개, 첫 알약 ${style.firstPill}, 중첩 ${style.nestedPills}`);
+
+  // 메모 접기 → 본문 가운데
+  const centerGap = () =>
+    page.evaluate(() => {
+      const d = document.getElementById('doc').getBoundingClientRect();
+      const m = document.getElementById('main').getBoundingClientRect();
+      return Math.abs(d.left + d.width / 2 - (m.left + m.width / 2));
+    });
+  const gapOpen = await centerGap();
+  await page.click('#memoToggle');
+  await page.waitForTimeout(300);
+  const gapClosed = await centerGap();
+  const cardsClosed = await page.locator('.memo-card').count();
+  await page.click('#memoToggle');
+  await page.waitForTimeout(300);
+  check('메모 접으면 본문 가운데', gapOpen > 50 && gapClosed < 2 && cardsClosed === 0 && (await page.locator('.memo-card').count()) === 1, `열림 ${gapOpen.toFixed(0)}px, 접힘 ${gapClosed.toFixed(1)}px`);
+
+  // 진도: 목차 체크 → 상위 % → 새로고침 후 유지
+  await page.click('#tocExpand');
+  const leaf = page.locator('#tocTree .toc-row', { hasText: '가. 물권과 채권의 준별과 특징' }).first();
+  await leaf.locator('.ck').click();
+  const parentPct = await page.locator('#tocTree .toc-row', { hasText: '물권과 채권' }).first().locator('.pct').innerText();
+  const overall = await page.locator('#progPct').innerText();
+  await page.locator('#tocTree .toc-row[data-lv="1"]', { hasText: '시험 설명' }).locator('.ck').click();
+  await page.waitForTimeout(700);
+  await page.reload();
+  await page.waitForSelector('#tocTree a');
+  await page.waitForTimeout(600);
+  const leafState = await page.locator('#tocTree .toc-row', { hasText: '가. 물권과 채권의 준별과 특징' }).first().locator('.ck').getAttribute('data-state');
+  check('진도 체크 · 진도율 · 유지', /\d+%/.test(parentPct) && overall !== '0%' && leafState === 'all', `상위 ${parentPct}, 전체 ${overall}, 새로고침 뒤 ${leafState}`);
+  await page.locator('#tocTree a', { hasText: '시험 설명' }).first().click();
+  await page.waitForTimeout(400);
+  const secBefore = await page.getAttribute('#secDone', 'aria-pressed');
+  await page.click('#secDone');
+  const secAfter = await page.getAttribute('#secDone', 'aria-pressed');
+  check('경로 바에서 현재 쟁점 완료', secBefore === 'true' && secAfter === 'false', `${secBefore}→${secAfter}`);
+  await page.click('#secDone');
+
   // 목차 접기
   await page.click('#btnToc');
   await page.waitForTimeout(300);
@@ -226,7 +289,7 @@ try {
   await ip.goto(URL_);
   await ip.waitForSelector('#tocTree a', { state: 'attached' });
   await ip.waitForTimeout(500);
-  const narrow = await ip.locator('#app').evaluate((el) => el.classList.contains('narrow') && !el.classList.contains('toc-open'));
+  const narrow = await ip.locator('#app').evaluate((el) => el.classList.contains('margin-off') && !el.classList.contains('toc-open'));
   const docW = (await ip.locator('#doc').boundingBox()).width;
   const scrollW = await ip.evaluate(() => document.documentElement.scrollWidth);
   check('아이패드 세로: 좁은 레이아웃, 가로 스크롤 없음', narrow && docW >= 750 && scrollW <= 820, `doc ${docW}, scrollW ${scrollW}`);
@@ -293,6 +356,14 @@ try {
   const uploaded = await cp.evaluate(() => [...window.__docs.values()].some((d) => d.items && d.items.bl && Object.values(d.items.bl).some((x) => !x.del)));
   const status = await cp.locator('#syncStatus').innerText();
   check('이 기기 기록 업로드 · 동기화 상태', uploaded && status === '동기화됨', `${uploaded} / ${status}`);
+  // 진도 체크도 계정 저장소(p.0)로 올라가는지
+  await cp.locator('#tocTree .toc-row[data-lv="1"]', { hasText: '시험 설명' }).locator('.ck').click();
+  await cp.waitForTimeout(2300);
+  const progUp = await cp.evaluate(() => {
+    const d = window.__docs.get('p.0');
+    return !!(d && d.items && d.items.prog && Object.values(d.items.prog).some((x) => x.done && !x.del));
+  });
+  check('진도 체크 계정 동기화', progUp);
   await cctx.close();
 } finally {
   await browser.close();

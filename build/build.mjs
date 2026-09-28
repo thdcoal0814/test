@@ -107,15 +107,7 @@ const stripTags = (html) =>
     .replace(/&#39;/g, "'")
     .replace(/&amp;/g, '&');
 
-const LABEL_KIND = [
-  [/^(원칙|요건|청구)$/, 'rule'],
-  [/^(예외|항변|재항변|재재항변|비교|주의)$/, 'exc'],
-  [/판례|판시|사안|사례|\[?\d{2,4}(다|두|도|마|카)/, 'case'],
-  [/^(검토|사견|私見|결론|정리|핵심|의미)$/, 'view'],
-  [/쟁점누락|‼/, 'warn'],
-];
-const labelKind = (t) => LABEL_KIND.find(([re]) => re.test(t))?.[1] || '';
-const CALLOUT_LABEL = { law: '조문', case: '판례', issue: '쟁점', ex: '예', test: '답안', ans: '핵심' };
+const CALLOUT_LABEL = { law: '조문', case: '판례', issue: '쟁점', ex: '사례', test: '답안', ans: '답안' };
 const FONT_CLASS = { '#7f7f7f': 'fc-gray', '#a5a5a5': 'fc-light', '#c00000': 'fc-red', '#ff0000': 'fc-red', '#000000': 'fc-ink' };
 const MIME = { png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif', webp: 'image/webp', svg: 'image/svg+xml' };
 
@@ -198,6 +190,25 @@ export function createMd(stats) {
     }
   });
 
+  // (a-2) 쟁점(issue) 콜아웃: 줄 맨 앞의 굵은 글씨(**판례** **검토** …)를 라벨 알약으로.
+  //      중첩된 판례 콜아웃·인용문·표 안과 콜아웃 제목 줄에는 적용하지 않는다.
+  md.core.ruler.after('inline', 'issue_pills', (state) => {
+    const stack = [];
+    let inTitle = false;
+    let tableDepth = 0;
+    for (const t of state.tokens) {
+      if (t.type === 'callout_open') stack.push(t.meta.type);
+      else if (t.type === 'callout_close') stack.pop();
+      else if (t.type === 'blockquote_open') stack.push('quote');
+      else if (t.type === 'blockquote_close') stack.pop();
+      else if (t.type === 'callout_title_open') inTitle = true;
+      else if (t.type === 'callout_title_close') inTitle = false;
+      else if (t.type === 'table_open') tableDepth++;
+      else if (t.type === 'table_close') tableDepth--;
+      else if (t.type === 'inline' && !inTitle && !tableDepth && stack[stack.length - 1] === 'issue') markLinePills(t.children || [], stats);
+    }
+  });
+
   // (b) 위키 링크 [[..]] · 임베드 ![[..]]
   md.inline.ruler.before('link', 'wikilink', (state, silent) => {
     const src = state.src;
@@ -265,12 +276,6 @@ export function createMd(stats) {
       return self.renderToken(tokens, idx, opts);
     };
   }
-  // 인라인 코드는 옵시디언에서 `원칙` `예외` 같은 라벨로 쓰였으므로 종류별 색 클래스를 붙인다
-  md.renderer.rules.code_inline = (tokens, idx) => {
-    const c = tokens[idx].content;
-    const k = labelKind(c.trim());
-    return `<code${k ? ` class="lbl-${k}"` : ''}>${esc(c)}</code>`;
-  };
   md.renderer.rules.table_open = () => '<div class="table-wrap"><table>\n';
   md.renderer.rules.table_close = () => '</table></div>\n';
 
@@ -317,10 +322,39 @@ export function createMd(stats) {
   return md;
 }
 
+// 문단 첫머리 또는 줄바꿈 바로 뒤에 오는 **굵은 글씨**(20자 이하)에 class="pill"
+function markLinePills(children, stats) {
+  let lineStart = true;
+  for (let k = 0; k < children.length; k++) {
+    const t = children[k];
+    if (t.type === 'softbreak' || t.type === 'hardbreak') {
+      lineStart = true;
+      continue;
+    }
+    if (t.type === 'text' && !t.content.trim()) continue;
+    if (lineStart && t.type === 'strong_open') {
+      let depth = 0;
+      let text = '';
+      for (let m = k; m < children.length; m++) {
+        const u = children[m];
+        if (u.type === 'strong_open') depth++;
+        else if (u.type === 'strong_close') {
+          if (--depth === 0) break;
+        } else if (u.type === 'text' || u.type === 'code_inline') text += u.content;
+      }
+      if (text.trim() && text.trim().length <= 20) {
+        t.attrJoin('class', 'pill');
+        stats.pills++;
+      }
+    }
+    lineStart = false;
+  }
+}
+
 // ---------- 4. 렌더 ----------
 export function renderDocument() {
   const { meta, body, lineCount } = loadSource();
-  const stats = { callouts: 0, embeds: 0, embedsFound: 0, blocks: 0, blockRefs: 0, htmlBlocks: [] };
+  const stats = { callouts: 0, embeds: 0, embedsFound: 0, blocks: 0, blockRefs: 0, pills: 0, htmlBlocks: [] };
   const md = createMd(stats);
   const env = { headings: [] };
   let html = md.render(body, env);
@@ -369,7 +403,7 @@ function build() {
   fs.writeFileSync(path.join(ROOT, 'dist/artifact.html'), artifact);
   const lv = headings.reduce((a, h) => ((a['H' + h.lv] = (a['H' + h.lv] || 0) + 1), a), {});
   console.log(`원문 ${lineCount}줄(frontmatter 제외) 변환`);
-  console.log(`제목 ${headings.length}개`, lv, `| 콜아웃 ${stats.callouts} | 블록 ${stats.blocks} | 이미지 ${stats.embeds}(파일 있음 ${stats.embedsFound}) | 블록ID ${stats.blockRefs}`);
+  console.log(`제목 ${headings.length}개`, lv, `| 콜아웃 ${stats.callouts} | 블록 ${stats.blocks} | 이미지 ${stats.embeds}(파일 있음 ${stats.embedsFound}) | 블록ID ${stats.blockRefs} | 쟁점 라벨 알약 ${stats.pills}`);
   if (stats.htmlBlocks.length) console.log('주의: 원문 HTML 블록', stats.htmlBlocks);
   console.log(`index.html ${(standalone.length / 1024).toFixed(0)}KB, dist/artifact.html ${(artifact.length / 1024).toFixed(0)}KB`);
 }

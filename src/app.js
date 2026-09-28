@@ -21,7 +21,7 @@
   const SVGNS = 'http://www.w3.org/2000/svg';
   const COLORS = ['y', 'g', 'b', 'p', 'o'];
   const COLOR_NAME = { y: '노랑', g: '초록', b: '파랑', p: '분홍', o: '주황' };
-  const KINDS = ['hl', 'bl', 'memo', 'ink'];
+  const KINDS = ['hl', 'bl', 'memo', 'ink', 'prog'];
   const DAY = 86400000;
 
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
@@ -48,7 +48,7 @@
   // ================= 화면 설정(기기별) =================
   const UI_KEY = DATA.docKey + ':ui';
   const ui = Object.assign(
-    { toc: null, speed: 1, blanks: false, showInk: true, finger: false, theme: 'auto', penColor: 'k', penWidth: 2.6, hlColor: 'y', hinted: false },
+    { toc: null, speed: 1, blanks: false, showInk: true, finger: false, theme: 'auto', penColor: 'k', penWidth: 2.6, hlColor: 'y', hinted: false, memoOpen: true },
     readJSON(UI_KEY)
   );
   const saveUI = () => {
@@ -122,7 +122,7 @@
   let inkTool = 'pen'; // 'pen' | 'erase'
   let blanksHidden = false;
   const revealed = new Set(); // 연 빈칸의 그룹 id (세션 한정)
-  const store = { hl: {}, bl: {}, memo: {}, ink: {} };
+  const store = { hl: {}, bl: {}, memo: {}, ink: {}, prog: {} };
   const orphans = new Set(); // 원문에서 위치를 찾지 못한 항목 "kind:id"
   const liveItems = (kind) => Object.values(store[kind]).filter(isLive);
 
@@ -326,7 +326,7 @@
   const annByBlock = new Map();
   const origHTML = new Map();
   function rangesOf(kind, it) {
-    if (!it) return [];
+    if (!it || kind === 'prog') return [];
     if (kind === 'memo') return it.rs || [];
     if (kind === 'ink') return it.b ? [{ b: it.b }] : [];
     return [{ b: it.b, s: it.s, e: it.e }];
@@ -499,7 +499,7 @@
     }
   }
   function touchedBlocks(kind, before, after, set) {
-    if (kind === 'ink') return;
+    if (kind === 'ink' || kind === 'prog') return;
     for (const r of rangesOf(kind, before)) set.add(r.b);
     for (const r of rangesOf(kind, after)) set.add(r.b);
   }
@@ -538,6 +538,7 @@
     if (rec.some((r) => r.kind === 'ink')) renderInkChanges(rec);
     for (const r of rec) markDirty(r.kind, store[r.kind][r.id]);
     if (rec.some((r) => r.kind === 'memo')) scheduleLayout();
+    if (rec.some((r) => r.kind === 'prog')) updateProgress();
     scheduleSave();
     updateHistoryButtons();
     if (mode === 'focus') renderFocus();
@@ -953,7 +954,7 @@
   function openMemoView(id, anchor) {
     const m = store.memo[id];
     if (!m) return;
-    if (!app.classList.contains('narrow') && mode !== 'focus') {
+    if (!app.classList.contains('margin-off') && mode !== 'focus') {
       const card = marginEl.querySelector(`.memo-card[data-id="${id}"]`);
       if (card) {
         card.classList.add('open');
@@ -1030,7 +1031,7 @@
     if (card) card.classList.toggle('linked', on);
   }
   function layoutMargin() {
-    if (app.classList.contains('narrow') || mode === 'focus') {
+    if (app.classList.contains('margin-off') || mode === 'focus') {
       marginEl.replaceChildren();
       return;
     }
@@ -1540,7 +1541,7 @@
     if (callout) {
       const chip = document.createElement('span');
       chip.className = 'f-ctx';
-      chip.style.setProperty('--c', `var(--c-${callout.dataset.callout}, var(--muted))`);
+      chip.style.setProperty('--c', `var(--cl-${callout.dataset.callout}, var(--cl-case))`);
       chip.textContent = callout.dataset.label;
       top.appendChild(chip);
       const ct = callout.querySelector(':scope > .callout-title .ct');
@@ -1560,7 +1561,10 @@
     card.appendChild(top);
     const body = document.createElement('div');
     body.className = 'f-body';
-    if (callout) body.style.setProperty('--c', `var(--c-${callout.dataset.callout})`);
+    if (callout) {
+      body.style.setProperty('--c', `var(--cl-${callout.dataset.callout}, var(--cl-case))`);
+      body.dataset.callout = callout.dataset.callout;
+    }
     const c = u.key.cloneNode(true);
     for (const el of [c, ...c.querySelectorAll('[id],[data-b]')]) {
       el.removeAttribute('id');
@@ -1595,6 +1599,7 @@
 
   // ================= 목차 · 현재 위치 =================
   const TRI = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M4 2.5l4.5 3.5L4 9.5z"/></svg>';
+  const CHECK = '<i><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.6 6.3l2.3 2.3 4.6-4.8"/></svg></i>';
   function buildToc() {
     const root = document.createElement('ul');
     const lis = new Map();
@@ -1609,11 +1614,26 @@
       tw.innerHTML = TRI;
       tw.setAttribute('aria-label', h.t + ' 펼치기·접기');
       tw.dataset.i = h.i;
+      const ck = document.createElement('button');
+      ck.type = 'button';
+      ck.className = 'ck';
+      ck.dataset.i = h.i;
+      ck.setAttribute('role', 'checkbox');
+      ck.setAttribute('aria-checked', 'false');
+      ck.setAttribute('aria-label', h.t + ' 공부 완료');
+      ck.innerHTML = CHECK;
       const a = document.createElement('a');
       a.href = '#' + h.id;
       a.textContent = h.t;
       a.dataset.i = h.i;
-      row.append(tw, a);
+      row.append(tw, ck, a);
+      if (h.children.length) {
+        const pct = document.createElement('span');
+        pct.className = 'pct';
+        row.appendChild(pct);
+        h.pct = pct;
+      }
+      h.ck = ck;
       li.appendChild(row);
       if (h.children.length) {
         li.appendChild(document.createElement('ul'));
@@ -1627,6 +1647,11 @@
     tocTree.appendChild(root);
   }
   tocTree.addEventListener('click', (e) => {
+    const ck = e.target.closest('.ck');
+    if (ck) {
+      toggleHeading(toc[+ck.dataset.i]);
+      return;
+    }
     const tw = e.target.closest('.tw');
     if (tw) {
       toc[+tw.dataset.i].li.classList.toggle('collapsed');
@@ -1716,13 +1741,15 @@
     const rr = row.getBoundingClientRect();
     if (rr.top < tr.top + 20 || rr.bottom > tr.bottom - 60) tocTree.scrollTop += rr.top - tr.top - tr.height / 3;
   }
+  const crumbPath = $('.crumb-path', crumbsEl);
   function renderCrumbs() {
-    crumbsEl.replaceChildren();
+    crumbPath.replaceChildren();
+    updateSecDone();
     if (mode === 'focus') {
       const n = document.createElement('span');
       n.className = 'crumb-note';
       n.textContent = '중요 내용 모아보기 · 하이라이트와 메모가 있는 블록을 쟁점별로 모았어요';
-      crumbsEl.appendChild(n);
+      crumbPath.appendChild(n);
       return;
     }
     const path = activeH ? pathOf(activeH) : [];
@@ -1730,7 +1757,7 @@
       const n = document.createElement('span');
       n.className = 'crumb-note';
       n.textContent = DATA.title;
-      crumbsEl.appendChild(n);
+      crumbPath.appendChild(n);
       return;
     }
     path.forEach((h, i) => {
@@ -1738,16 +1765,112 @@
         const s = document.createElement('span');
         s.className = 'sep';
         s.textContent = '›';
-        crumbsEl.appendChild(s);
+        crumbPath.appendChild(s);
       }
       const bt = document.createElement('button');
       bt.type = 'button';
       bt.textContent = h.t;
       bt.title = h.t;
       bt.addEventListener('click', () => goToHeading(h));
-      crumbsEl.appendChild(bt);
+      crumbPath.appendChild(bt);
     });
   }
+
+  // ================= 진도(쟁점별 완료 체크) =================
+  // 각 제목의 가중치 = 그 제목부터 다음 제목 전까지의 블록 수. 상위 제목은 하위 전체를 합산한다.
+  const ownWeight = new Array(toc.length).fill(0);
+  blockSec.forEach((h) => {
+    if (h) ownWeight[h.i]++;
+  });
+  const headKey = (h) => h.el.dataset.b;
+  const isDoneH = (h) => isLive(store.prog[headKey(h)]);
+  function subtreeOf(h) {
+    const out = [h];
+    for (const c of h.children) out.push(...subtreeOf(c));
+    return out;
+  }
+  function computeProgress() {
+    const res = new Array(toc.length);
+    const visit = (h) => {
+      let total = ownWeight[h.i] || 1;
+      let done = isDoneH(h) ? total : 0;
+      for (const c of h.children) {
+        const r = visit(c);
+        total += r.total;
+        done += r.done;
+      }
+      res[h.i] = { total, done };
+      return res[h.i];
+    };
+    let total = 0;
+    let done = 0;
+    for (const h of toc) {
+      if (h.parent) continue;
+      const r = visit(h);
+      total += r.total;
+      done += r.done;
+    }
+    return { res, total, done };
+  }
+  const pctOf = (done, total) => (done >= total ? 100 : Math.floor((done / total) * 100));
+  function updateProgress() {
+    const p = computeProgress();
+    for (const h of toc) {
+      const r = p.res[h.i];
+      const pct = pctOf(r.done, r.total);
+      const state = r.done >= r.total ? 'all' : r.done > 0 ? 'part' : 'none';
+      h.ck.dataset.state = state;
+      h.ck.style.setProperty('--p', pct);
+      h.ck.setAttribute('aria-checked', state === 'all' ? 'true' : state === 'part' ? 'mixed' : 'false');
+      h.row.classList.toggle('is-done', state === 'all');
+      if (h.pct) h.pct.textContent = pct ? pct + '%' : '';
+    }
+    const pct = p.total ? pctOf(p.done, p.total) : 0;
+    $('#progPct').textContent = pct + '%';
+    $('#progCount').textContent = `완료 ${toc.filter(isDoneH).length}/${toc.length}곳`;
+    $('#progBar i').style.width = pct + '%';
+    $('#progBar').setAttribute('aria-valuenow', String(pct));
+    updateSecDone();
+  }
+  // 하위가 있는 제목은 아래 쟁점 전체를 한 번에 완료/해제, 경로 바의 버튼(ownOnly)은 그 제목 구간만
+  function toggleHeading(h, ownOnly) {
+    if (!h) return;
+    const targets = ownOnly || !h.children.length ? [h] : subtreeOf(h);
+    const allDone = targets.every(isDoneH);
+    commit(
+      targets
+        .filter((x) => isDoneH(x) === allDone)
+        .map((x) => ({ kind: 'prog', id: headKey(x), after: allDone ? null : { b: headKey(x), done: 1 } }))
+    );
+  }
+  function updateSecDone() {
+    const btn = $('#secDone');
+    if (mode === 'focus' || !activeH) {
+      btn.hidden = true;
+      return;
+    }
+    btn.hidden = false;
+    const done = isDoneH(activeH);
+    btn.setAttribute('aria-pressed', String(done));
+    $('span', btn).textContent = done ? '완료' : '완료 표시';
+    btn.title = `${activeH.t} — ${done ? '누르면 완료 해제' : '이 부분을 공부 완료로 표시'}`;
+  }
+  $('#secDone').addEventListener('click', () => toggleHeading(activeH, true));
+
+  // ================= 메모 여백 접기 =================
+  function updateMemoToggle(canMargin, count) {
+    const btn = $('#memoToggle');
+    btn.hidden = !(canMargin && count > 0 && mode !== 'focus');
+    btn.setAttribute('aria-expanded', String(ui.memoOpen));
+    $('span', btn).textContent = ui.memoOpen ? '메모 접기' : `메모 ${count}개 펼치기`;
+  }
+  function toggleMemoPanel() {
+    if ($('#memoToggle').hidden) return;
+    ui.memoOpen = !ui.memoOpen;
+    saveUI();
+    scheduleLayout();
+  }
+  $('#memoToggle').addEventListener('click', toggleMemoPanel);
   function scrollToY(y, smooth) {
     window.scrollTo({ top: Math.max(0, y), behavior: smooth ? 'smooth' : 'auto' });
   }
@@ -2016,7 +2139,11 @@
   }
   function doLayout() {
     const main = $('#main');
-    app.classList.toggle('narrow', main.clientWidth < 760 + 22 + 248 + 36);
+    // 메모 여백은 화면에 들어가고, 펼쳐 두었고, 메모가 있을 때만. 아니면 숨겨서 본문이 가운데 온다
+    const canMargin = main.clientWidth >= 760 + 22 + 248 + 36;
+    const memoCount = orderedMemos().length;
+    app.classList.toggle('margin-off', !(canMargin && ui.memoOpen && memoCount > 0));
+    updateMemoToggle(canMargin, memoCount);
     blockTops = null;
     measureHeadings();
     layoutInk();
@@ -2148,6 +2275,7 @@
     resolveAnchors();
     if (res.touched.size) refreshBlocks(res.touched);
     if (res.inkChanged) renderAllInk();
+    updateProgress();
     scheduleLayout();
     scheduleSave();
     if (mode === 'focus') renderFocus();
@@ -2161,6 +2289,7 @@
     return h % n;
   }
   function shardKey(kind, it) {
+    if (kind === 'prog') return 'p.0';
     const sec = it && it.b ? secOf(it.b) : null;
     if (kind === 'ink') {
       const s = sec ? ancestorUpTo(sec, 3) : null;
@@ -2373,7 +2502,7 @@
       toggleMenu(false);
       confirmPop(
         $('#btnMenu').getBoundingClientRect(),
-        `백업에 하이라이트 ${cnt('hl')} · 빈칸 ${cnt('bl')} · 메모 ${cnt('memo')} · 필기 ${cnt('ink')}개가 있어요. 지금 내용과 합칠까요, 백업으로 바꿀까요?`,
+        `백업에 하이라이트 ${cnt('hl')} · 빈칸 ${cnt('bl')} · 메모 ${cnt('memo')} · 필기 ${cnt('ink')} · 완료 쟁점 ${cnt('prog')}개가 있어요. 지금 내용과 합칠까요, 백업으로 바꿀까요?`,
         '합치기',
         () => {
           refreshAfterMerge(mergeItems(data.items, { dirty: true }));
@@ -2499,6 +2628,7 @@
     if (['1', '2', '3', '4'].includes(e.key)) setMode(['read', 'blank', 'ink', 'focus'][+e.key - 1]);
     else if (e.key === '[') setToc(!app.classList.contains('toc-open'), true);
     else if (k === 'b') setBlanksHidden(!blanksHidden);
+    else if (k === 'm') toggleMemoPanel();
     else if (k === 'p') setAuto(!auto.on);
     else if (e.key === '+' || e.key === '=') setSpeed(1);
     else if (e.key === '-') setSpeed(-1);
@@ -2535,6 +2665,7 @@
     renderAllAnnotations();
     renderAllInk();
     updateBlankCount();
+    updateProgress();
     scheduleLayout();
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(scheduleLayout);
     initCloud();
