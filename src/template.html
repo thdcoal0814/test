@@ -1,0 +1,188 @@
+<title>{{TITLE}}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Nanum+Myeongjo:wght@700;800&display=swap">
+<style>
+{{CSS}}
+</style>
+<!--BODY-->
+<div id="app" data-mode="read" class="toc-open">
+  <header id="topbar">
+    <button id="btnToc" class="icon-btn" type="button" aria-label="목차 열기/닫기" aria-controls="toc" aria-expanded="true">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h10M4 18h16"/></svg>
+    </button>
+    <span class="brand">{{DOC_TITLE}}</span>
+    <nav id="modeTabs" role="tablist" aria-label="보기 모드">
+      <button type="button" role="tab" data-mode="read" aria-selected="true">일반</button>
+      <button type="button" role="tab" data-mode="blank" aria-selected="false">빈칸</button>
+      <button type="button" role="tab" data-mode="ink" aria-selected="false">필기</button>
+      <button type="button" role="tab" data-mode="focus" aria-selected="false">중요</button>
+    </nav>
+    <div class="top-right">
+      <label class="switch" title="빈칸 가리기 (B)">
+        <input type="checkbox" id="blankToggle">
+        <span class="switch-track" aria-hidden="true"></span>
+        <span class="switch-label">빈칸 가리기</span>
+      </label>
+      <span id="syncStatus" class="sync" data-state="local" title="저장 상태">로컬 저장</span>
+      <button id="btnMenu" class="icon-btn" type="button" aria-label="설정과 백업" aria-haspopup="true" aria-expanded="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
+      </button>
+    </div>
+  </header>
+  <nav id="crumbs" aria-label="현재 위치"></nav>
+
+  <aside id="toc" aria-label="목차">
+    <div class="toc-head">
+      <input id="tocFilter" type="search" placeholder="목차에서 찾기" aria-label="목차에서 찾기" autocomplete="off">
+      <div class="toc-actions">
+        <button type="button" id="tocExpand" class="text-btn">모두 펼치기</button>
+        <button type="button" id="tocCollapse" class="text-btn">모두 접기</button>
+        <button type="button" id="tocClose" class="icon-btn small" aria-label="목차 접기">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+        </button>
+      </div>
+    </div>
+    <nav id="tocTree"></nav>
+  </aside>
+  <div id="scrim" hidden></div>
+
+  <main id="main">
+    <div id="stage">
+      <article id="doc">
+        <header class="doc-head">
+          <h1 class="doc-title">{{DOC_TITLE}}</h1>
+          <div class="doc-meta">{{META}}</div>
+        </header>
+        <div id="content">
+{{CONTENT}}
+        </div>
+        <div id="pick" aria-hidden="true"></div>
+        <svg id="ink" aria-hidden="true"></svg>
+      </article>
+      <aside id="margin" aria-label="메모"></aside>
+    </div>
+    <section id="focusView" hidden aria-label="중요 내용 모아보기"></section>
+  </main>
+
+  <div id="toolbar" role="toolbar" aria-label="도구">
+    <div class="tb-panel" data-for="read">
+      <div class="tb-group" aria-label="자동 스크롤">
+        <button type="button" id="autoPlay" class="tb-btn" aria-pressed="false" title="자동 스크롤 (P)">
+          <svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5l11 7-11 7z"/></svg>
+          <svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3v14H7zM14 5h3v14h-3z"/></svg>
+        </button>
+        <button type="button" id="speedDown" class="tb-btn small" aria-label="느리게">−</button>
+        <output id="speedLabel" class="speed" aria-live="polite">1×</output>
+        <button type="button" id="speedUp" class="tb-btn small" aria-label="빠르게">+</button>
+      </div>
+      <div class="tb-group" aria-label="하이라이트">
+        <button type="button" class="swatch" data-tool="hl" data-color="y" aria-label="노랑 하이라이트" aria-pressed="false"></button>
+        <button type="button" class="swatch" data-tool="hl" data-color="g" aria-label="초록 하이라이트" aria-pressed="false"></button>
+        <button type="button" class="swatch" data-tool="hl" data-color="b" aria-label="파랑 하이라이트" aria-pressed="false"></button>
+        <button type="button" class="swatch" data-tool="hl" data-color="p" aria-label="분홍 하이라이트" aria-pressed="false"></button>
+        <button type="button" class="swatch" data-tool="hl" data-color="o" aria-label="주황 하이라이트" aria-pressed="false"></button>
+        <button type="button" class="tb-btn" data-tool="erase" aria-pressed="false" title="하이라이트 지우기">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h9M7.5 16.5l-3-3 9-9 6 6-6.5 6.5z"/></svg><span>지우개</span>
+        </button>
+        <button type="button" class="tb-btn" data-tool="memo" aria-pressed="false" title="메모 달기">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14v12H10l-5 4z"/></svg><span>메모</span>
+        </button>
+      </div>
+    </div>
+    <div class="tb-panel" data-for="blank">
+      <div class="tb-group">
+        <button type="button" class="tb-btn" data-tool="blank" aria-pressed="true">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="9" width="18" height="7" rx="1.5"/></svg><span>빈칸 만들기</span>
+        </button>
+        <button type="button" class="tb-btn" data-tool="unblank" aria-pressed="false">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="9" width="18" height="7" rx="1.5" stroke-dasharray="3 2"/></svg><span>빈칸 지우기</span>
+        </button>
+      </div>
+      <div class="tb-group">
+        <button type="button" class="tb-btn" id="hideAll">모두 가리기</button>
+        <button type="button" class="tb-btn" id="showAll">모두 보이기</button>
+        <span id="blankCount" class="tb-note"></span>
+      </div>
+    </div>
+    <div class="tb-panel" data-for="ink">
+      <div class="tb-group" aria-label="펜">
+        <button type="button" class="pen" data-tool="pen" data-color="k" aria-label="검정 펜" aria-pressed="true"></button>
+        <button type="button" class="pen" data-tool="pen" data-color="b" aria-label="파랑 펜" aria-pressed="false"></button>
+        <button type="button" class="pen" data-tool="pen" data-color="r" aria-label="빨강 펜" aria-pressed="false"></button>
+        <span class="tb-sep" aria-hidden="true"></span>
+        <button type="button" class="width" data-width="1.6" aria-label="가는 펜" aria-pressed="false"><i style="--w:2px"></i></button>
+        <button type="button" class="width" data-width="2.6" aria-label="보통 펜" aria-pressed="true"><i style="--w:4px"></i></button>
+        <button type="button" class="width" data-width="4.2" aria-label="굵은 펜" aria-pressed="false"><i style="--w:7px"></i></button>
+      </div>
+      <div class="tb-group">
+        <button type="button" class="tb-btn" data-tool="inkErase" aria-pressed="false" title="닿은 획 지우기">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h9M7.5 16.5l-3-3 9-9 6 6-6.5 6.5z"/></svg><span>획 지우개</span>
+        </button>
+        <button type="button" class="tb-btn" id="inkClear">전체 지우기</button>
+      </div>
+    </div>
+    <div class="tb-panel" data-for="focus">
+      <div class="tb-group" role="radiogroup" aria-label="보기">
+        <button type="button" class="chip" data-ftype="all" aria-pressed="true">전체</button>
+        <button type="button" class="chip" data-ftype="hl" aria-pressed="false">하이라이트</button>
+        <button type="button" class="chip" data-ftype="memo" aria-pressed="false">메모</button>
+      </div>
+      <div class="tb-group" aria-label="색 거르기">
+        <button type="button" class="swatch" data-fcolor="y" aria-label="노랑" aria-pressed="true"></button>
+        <button type="button" class="swatch" data-fcolor="g" aria-label="초록" aria-pressed="true"></button>
+        <button type="button" class="swatch" data-fcolor="b" aria-label="파랑" aria-pressed="true"></button>
+        <button type="button" class="swatch" data-fcolor="p" aria-label="분홍" aria-pressed="true"></button>
+        <button type="button" class="swatch" data-fcolor="o" aria-label="주황" aria-pressed="true"></button>
+      </div>
+    </div>
+    <div class="tb-group tb-history">
+      <button type="button" id="undo" class="tb-btn" title="되돌리기 (Ctrl+Z)" aria-label="되돌리기">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7L4 12l5 5M4 12h11a5 5 0 010 10h-2"/></svg>
+      </button>
+      <button type="button" id="redo" class="tb-btn" title="다시 하기 (Ctrl+Shift+Z)" aria-label="다시 하기">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 7l5 5-5 5M20 12H9a5 5 0 000 10h2"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div id="selMenu" class="floating" hidden role="menu" aria-label="선택한 부분에 적용">
+    <button type="button" class="swatch" data-sel="hl" data-color="y" aria-label="노랑"></button>
+    <button type="button" class="swatch" data-sel="hl" data-color="g" aria-label="초록"></button>
+    <button type="button" class="swatch" data-sel="hl" data-color="b" aria-label="파랑"></button>
+    <button type="button" class="swatch" data-sel="hl" data-color="p" aria-label="분홍"></button>
+    <button type="button" class="swatch" data-sel="hl" data-color="o" aria-label="주황"></button>
+    <button type="button" class="text-btn" data-sel="blank">빈칸</button>
+    <button type="button" class="text-btn" data-sel="memo">메모</button>
+  </div>
+  <div id="popover" class="floating" hidden></div>
+
+  <div id="menu" class="floating" hidden role="dialog" aria-label="설정과 백업">
+    <h2 class="menu-title">보기</h2>
+    <label class="menu-row"><input type="checkbox" id="optInk" checked> 다른 모드에서도 필기 보이기</label>
+    <label class="menu-row"><input type="checkbox" id="optFinger"> 손가락으로도 필기·선택하기</label>
+    <div class="menu-row seg" role="radiogroup" aria-label="테마">
+      <button type="button" data-theme-opt="auto" aria-pressed="true">자동</button>
+      <button type="button" data-theme-opt="light" aria-pressed="false">밝게</button>
+      <button type="button" data-theme-opt="dark" aria-pressed="false">어둡게</button>
+    </div>
+    <h2 class="menu-title">저장</h2>
+    <p id="syncExplain" class="menu-note"></p>
+    <div class="menu-row btns">
+      <button type="button" id="btnExport" class="text-btn solid">백업 내보내기</button>
+      <button type="button" id="btnImport" class="text-btn">백업 가져오기</button>
+      <input type="file" id="importFile" accept=".json,application/json" hidden>
+    </div>
+    <h2 class="menu-title">사용법</h2>
+    <ul class="menu-help">
+      <li>펜·마우스로 끌면 단어 단위로 선택돼요. 단어를 탭하면 그 단어 전체에 적용돼요.</li>
+      <li>손가락으로 끌면 스크롤, 손가락 탭은 가린 빈칸 열기예요.</li>
+      <li>단축키: 1–4 모드 · [ 목차 · B 빈칸 가리기 · P 자동 스크롤 · Ctrl+Z 되돌리기 · Esc 도구 해제</li>
+    </ul>
+  </div>
+  <div id="toast" role="status" aria-live="polite"></div>
+</div>
+<script type="application/json" id="docData">{{DATA}}</script>
+<script>
+{{JS}}
+</script>

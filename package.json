@@ -1,0 +1,17 @@
+{
+  "name": "minbeop2-study-viewer",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "민법2 노트(md)를 하이라이트·빈칸·필기·중요내용 모드가 있는 HTML 학습 뷰어로 변환",
+  "scripts": {
+    "build": "node build/build.mjs",
+    "verify": "node build/verify-content.mjs",
+    "test": "node tests/smoke.mjs"
+  },
+  "devDependencies": {
+    "markdown-it": "^14.1.0",
+    "markdown-it-cjk-friendly": "^3.0.0",
+    "markdown-it-mark": "^4.0.0"
+  }
+}
