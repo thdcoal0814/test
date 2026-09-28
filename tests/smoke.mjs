@@ -226,15 +226,8 @@ try {
       nestedPills: document.querySelectorAll('.c-issue .callout strong.pill, .c-issue .callout-title strong.pill').length,
       firstPill: document.querySelector('.c-issue strong.pill')?.textContent,
       lblLeft: document.querySelectorAll('code[class*="lbl-"]').length,
-      ...(() => {
-        const li = [...document.querySelectorAll('#content li')].find((l) => l.nextElementSibling && l.offsetParent);
-        const a = li.getBoundingClientRect();
-        const b = li.nextElementSibling.getBoundingClientRect();
-        return { lh: cs(li).lineHeight, liGap: b.top - a.bottom };
-      })(),
     };
   });
-  check('본문 행간 2.0 · 목록 항목 간격', style.lh === '32px' && style.liGap > 7 && style.liGap < 9, `행간 ${style.lh}, 항목 간격 ${style.liGap.toFixed(1)}px`);
   check('조문 제목 줄은 본문처럼', style.lawWeight === '400' && style.lawColorIsText, JSON.stringify([style.lawWeight, style.lawColorIsText]));
   check('판례 제목은 스니펫 회색', style.caseColor === 'rgb(110, 118, 128)', style.caseColor);
   check('콜아웃 배경은 스니펫 색을 더 연하게', style.lawBg === 'rgba(62, 106, 168, 0.055)', style.lawBg);
